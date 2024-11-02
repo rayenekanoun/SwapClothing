@@ -4,6 +4,7 @@
   "description": "backend for the swapClothing app ",
   "main": "server.js",
   "scripts": {
+    "start": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -27,8 +28,11 @@
     "express-mongo-sanitize": "^2.2.0",
     "helmet": "^8.0.0",
     "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.0",
     "morgan": "^1.10.0",
+    "nodemon": "^3.1.7",
+    "validator": "^13.12.0",
     "xss-clean": "^0.1.4"
   }
 }

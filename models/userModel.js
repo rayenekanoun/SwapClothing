@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const validator = require('validator');
-const bcrypt = require('bcryptjs');
+//const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -36,12 +36,24 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
-  createdAt: Date,
-  bio: String,
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updateAt: Date,
+  bio: {
+    type: String,
+    valiodate: {
+      validator: function (el) {
+        return el.length <= 150;
+      },
+      message: 'Bio must be less than 151 characters',
+    },
+  },
   subscription: {
-    type: Boolean,
+    active:{ type :Boolean, default: false},
     startDate: Date,
-    default: false,
+    endDate: Date,
   },
   photoUrl: String,
   role: {
@@ -49,10 +61,15 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user',
   },
-  clothesOffered: [
+  wishList: [
     {
-      type: mongoose.Schema.ObjectId,
-      ref: 'clothe',
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ClothingItem', // Reference to ClothingItem schema
     },
   ],
+
 });
+
+
+const User = mongoose.model('User', userSchema);
+module.exports = User;

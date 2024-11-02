@@ -1,11 +1,13 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const xss = require('xss-clean');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const hpp = require('hpp');
 const cors = require('cors');
 const mongoSanitize = require('express-mongo-sanitize');
+const userRouter = require('./routes/userRoutes');
+const AppError = require('./utils/appError'); 
+const globalErrorHandler = require('./controllers/errorController');
 
 const app = express();
 
@@ -39,12 +41,11 @@ app.use((req, res, next) => {
 });
 
 // Simple route handler
-app.get('/api/v1/', (req, res) => {
-  console.log('Hello from the middleware 👋');
-  res
-    .status(200)
-    .json({ status: 'success', message: 'Hello from the server side!' });
+app.use('/api/v1/user', userRouter);
+app.all('*', (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
+app.use(globalErrorHandler);
 
 // Export the app
 module.exports = app;
