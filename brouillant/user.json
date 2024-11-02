@@ -1,0 +1,61 @@
+{
+  "User": {
+    "_id": "ObjectId",
+    "username": "String",
+    "email": "String",
+    "passwordHash": "String",
+    "profile": {
+      "displayName": "String",
+      "profilePictureUrl": "String",
+      "bio": "String",
+      "theme": "String"
+    },
+    "subscriptionStatus": {
+      "isPremium": "Boolean",
+      "startDate": "Date",
+      "endDate": "Date"
+    },
+    "itemsListed": [
+      {
+        "itemId": "ObjectId",
+        "title": "String",
+        "description": "String",
+        "photos": ["String"],
+        "category": "String",
+        "size": "String",
+        "condition": "String",
+        "listedAt": "Date",
+        "promoted": "Boolean"
+      }
+    ],
+    "wishList": [
+      {
+        "itemId": "ObjectId",
+        "title": "String",
+        "category": "String",
+        "size": "String"
+      }
+    ],
+    "swapHistory": [
+      {
+        "swapId": "ObjectId",
+        "itemSwapped": "ObjectId",
+        "partnerId": "ObjectId",
+        "ratingGiven": "Number",
+        "ratingReceived": "Number",
+        "swapDate": "Date"
+      }
+    ],
+    "messages": [
+      {
+        "messageId": "ObjectId",
+        "senderId": "ObjectId",
+        "receiverId": "ObjectId",
+        "content": "String",
+        "sentAt": "Date"
+      }
+    ],
+    "createdAt": "Date",
+    "updatedAt": "Date"
+  }
+}
