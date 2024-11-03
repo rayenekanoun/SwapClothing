@@ -67,12 +67,11 @@ module.exports = (err, req, res, next) => {
   } else if (process.env.NODE_ENV === 'production') {
     let error = { ...err };
 
-    //hne lazemha tsyr 5atr error.message w error.name w error.stack w error.code non-enumerbale( maydhhrouch )
+    //hne lazemha tsyr 5atr error.message w error.name w error.stack w error.code non-enumerbale( maydhhrouch  donc ...err mtmchych maahom)
     error.message = err.message;
     error.name = err.name;
     error.stack = err.stack;
     error.code = err.code;
-
 
 
     //console.log("haw hne ", error);

@@ -1,10 +1,13 @@
 const express = require('express');
-const userController = require('./../controllers/userController');
+//const userController = require('./../controllers/userController');
 const authController = require('../controllers/authcontroller');
 const router = express.Router();
 
 router.post('/signup', authController.signup);
-// router.post('/login', authController.login);
+router.post('/login', authController.login);
+router.post('/refresh', authController.refresh);
+
+router.get('/testProtect' , authController.protect ,(req , res ) =>{ res.status(200).json({message : 'you are protected'})});
 // router.post('/forgotPassword', authController.forgotPassword);
 // router.patch('/resetPassword/:token', authController.resetPassword);
 

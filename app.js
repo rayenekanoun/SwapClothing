@@ -8,8 +8,12 @@ const mongoSanitize = require('express-mongo-sanitize');
 const userRouter = require('./routes/userRoutes');
 const AppError = require('./utils/appError'); 
 const globalErrorHandler = require('./controllers/errorController');
+const cookieParser = require('cookie-parser');
+
 
 const app = express();
+//use cookies
+app.use(cookieParser());
 
 // Set security HTTP headers
 app.use(helmet());

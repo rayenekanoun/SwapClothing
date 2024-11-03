@@ -1,7 +1,7 @@
-const crypto = require('crypto');
+//const crypto = require('crypto');
 const mongoose = require('mongoose');
 const validator = require('validator');
-//const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema({
     },
   },
   subscription: {
-    active:{ type :Boolean, default: false},
+    active: { type: Boolean, default: false },
     startDate: Date,
     endDate: Date,
   },
@@ -67,9 +67,43 @@ const userSchema = new mongoose.Schema({
       ref: 'ClothingItem', // Reference to ClothingItem schema
     },
   ],
-
 });
 
+
+
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  // Hash the password  cost : 10
+  this.passwordConfirm = undefined;
+  this.password = await bcrypt.hash(this.password, 10);
+  //console.log(this.password);
+  next();
+});
+
+// when was tha password changed if it is not a new  user
+userSchema.pre('save', function(next) {
+  if (!this.isModified('password') || this.isNew) return next();
+
+  this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
+
+
+
+userSchema.methods.correctPassword = async function (givenpassword , actualpassword) {
+  return await bcrypt.compare(givenpassword, actualpassword);
+}
+
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000,
+      10,
+    );
+    return JWTTimestamp < changedTimestamp;
+  }
+  return false;
+};
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;
