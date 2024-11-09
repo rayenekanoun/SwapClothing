@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "debug": "ndb server.js"
   },
   "author": "",
   "license": "ISC",
@@ -34,6 +35,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.0",
     "morgan": "^1.10.0",
+    "ndb": "^1.1.5",
     "nodemailer": "^6.9.16",
     "nodemon": "^3.1.7",
     "redis": "^4.7.0",
