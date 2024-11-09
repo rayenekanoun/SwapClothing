@@ -1,14 +1,20 @@
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
 const APIFeatures = require('./../utils/apiFeatures');
+const User = require('../models/userModel');
 
 exports.deleteOne = Model =>
   catchAsync(async (req, res, next) => {
-    const doc = await Model.findByIdAndDelete(req.params.id);
-
+    const doc = await Model.findById(req.params.id);
     if (!doc) {
       return next(new AppError('No document found with that ID', 404));
     }
+    //to restric the deletion of an admin
+    if(Model=== User && doc.role==="admin"){ 
+      return next(new AppError('You cannot delete an admin', 401));
+    }
+
+    await Model.findByIdAndDelete(req.params.id);
 
     res.status(204).json({
       status: 'success',
@@ -18,6 +24,11 @@ exports.deleteOne = Model =>
 
 exports.updateOne = Model =>
   catchAsync(async (req, res, next) => {
+
+    if (req.body.password) {
+      return next(new AppError('This route is not for password updates. Please use /updateMyPassword.', 400));
+    }
+
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
@@ -83,8 +94,7 @@ exports.getAll = Model =>
     res.status(200).json({
       status: 'success',
       results: doc.length,
-      data: {
-        data: doc
-      }
+      data:  doc
+      
     });
   });

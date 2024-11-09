@@ -120,7 +120,6 @@ exports.protect = catchAsync(async (req, res, next) => {
       new appError('User recently changed password! Please log in again.', 401),
     );
   }
-  console.log('currentUser :', currentUser);
   req.user = currentUser;
   next();
 });
@@ -252,3 +251,18 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 
 });
+
+
+
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    // console.log('roles :', roles);
+    // console.log('req.user.role :', req.user.role);
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new appError('You do not have permission to perform this action', 403)
+      );
+    }
+    next();
+  };
+};
