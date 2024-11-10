@@ -67,6 +67,11 @@ const userSchema = new mongoose.Schema({
       ref: 'ClothingItem', // Reference to ClothingItem schema
     },
   ],
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 
