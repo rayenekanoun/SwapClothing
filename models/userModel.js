@@ -72,6 +72,17 @@ const userSchema = new mongoose.Schema({
     default: true,
     select: false,
   },
+  deviceSessions: [
+    {
+      deviceId: String,
+      lastLogoutTime: Date,
+      lastActiveAt:{
+        type: Date,
+        default: Date.now,
+      },
+      _id: false,
+    },
+  ],
 });
 
 

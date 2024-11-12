@@ -5,15 +5,16 @@ const crypto = require('crypto');
 const appError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const sendEmail = require('../utils/email');
+const { v4: uuidv4 } = require('uuid');
 //const { compareSync } = require('bcryptjs');
 
-const signAcessToken = (id) => {
-  return jwt.sign({ id }, process.env.ACCESS_TOKEN_SECRET, {
+const signAcessToken = (id , deviceId) => {
+  return jwt.sign({ id , deviceId }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: process.env.JWT_ACCESS_EXPIRES_IN,
   });
 };
-const signRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.REFRESH_TOKEN_SECRET, {
+const signRefreshToken = (id , deviceId) => {
+  return jwt.sign({ id , deviceId}, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
   });
 };
@@ -21,11 +22,13 @@ const signRefreshToken = (id) => {
 const createSendToken = catchAsync(async (
   user,
   statusCode,
-  res,
+  res,) => {
+  const deviceId = uuidv4(); // Generate a unique deviceId
+  user.deviceSessions.push({ deviceId });
+  await user.save( { validateBeforeSave: false }); 
 
-) => {
-  const accessToken = signAcessToken(user._id);
-  const refreshToken = signRefreshToken(user._id);
+  const accessToken = signAcessToken(user._id , deviceId);
+  const refreshToken = signRefreshToken(user._id , deviceId);
   //console.log( " refresh 2", refreshToken);
   //console.log(accessToken);
   // Store the refresh token in Redis with expiration time // for later development
@@ -43,6 +46,7 @@ const createSendToken = catchAsync(async (
     secure: process.env.NODE_ENV === 'production',
   };
   res.cookie('refreshToken', refreshToken, cookieOptions);
+  //res.cookie('deviceId', deviceId, { httpOnly: true }); // instead of putting it in the jwt token we put it in the cookie
 
   // Remove password from output
   user.password = undefined;
@@ -84,6 +88,8 @@ exports.login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+
+
 exports.protect = catchAsync(async (req, res, next) => {
   //get token
   let accesstoken;
@@ -120,9 +126,75 @@ exports.protect = catchAsync(async (req, res, next) => {
       new appError('User recently changed password! Please log in again.', 401),
     );
   }
+  
+  if (!currentUser.deviceSessions.find((session) => session.deviceId === decoded.deviceId)) {
+    return next(new appError('Invalid device session', 401));
+  }
+  if (currentUser.deviceSessions.find((session) => session.deviceId === decoded.deviceId && session.lastLogoutTime)) {
+    return next(new appError('User logged out', 401));
+  }
   req.user = currentUser;
   next();
 });
+
+
+exports.logout = catchAsync(async (req, res, next) => {
+  let token;
+  let decoded;
+  const { refreshToken } = req.cookies;
+    // Check if refreshToken exists in cookies
+    if (refreshToken) {
+      decoded = await jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+      const currentUser = await User.findById(decoded.id);
+
+      if (!currentUser) {
+        res.clearCookie('refreshToken');
+        return next(new appError('User does not exist, logged out', 200));
+      }
+
+      // Update last logout time for the device session
+      const session = currentUser.deviceSessions.find(
+        (session) => session.deviceId === decoded.deviceId
+      );
+
+      if (session) {
+        session.lastLogoutTime = new Date();
+        await currentUser.save({ validateBeforeSave: false });
+      }
+
+      res.clearCookie('refreshToken');
+      return res.status(200).json({ status: 'success' });
+    }
+
+    // Check if accessToken exists in headers
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+      decoded = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) {
+        return next(new appError('User does not exist', 401));
+      }
+
+      const session = currentUser.deviceSessions.find(
+        (session) => session.deviceId === decoded.deviceId
+      );
+
+      if (session) {
+        session.lastLogoutTime = new Date();
+        await currentUser.save({ validateBeforeSave: false });
+      }
+
+      return res.status(200).json({ status: 'success' });
+    }
+
+    // No token provided
+    return next(new appError('No active session found', 200));
+  
+  }
+);
+
+
 
 exports.refresh = catchAsync(async (req, res, next) => {
   let refreshToken;
