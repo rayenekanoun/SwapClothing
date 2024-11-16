@@ -84,7 +84,10 @@ const userSchema = new mongoose.Schema({
     },
   ],
 });
-
+userSchema.pre(/^find/, function(next) {
+  this.select('-__v -active');
+  next();
+});
 
 
 userSchema.pre('save', async function (next) {
