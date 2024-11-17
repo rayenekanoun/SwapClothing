@@ -8,27 +8,25 @@ const sendEmail = require('../utils/email');
 const { v4: uuidv4 } = require('uuid');
 //const { compareSync } = require('bcryptjs');
 
-const signAcessToken = (id , deviceId) => {
-  return jwt.sign({ id , deviceId }, process.env.ACCESS_TOKEN_SECRET, {
+const signAcessToken = (id, deviceId) => {
+  return jwt.sign({ id, deviceId }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: process.env.JWT_ACCESS_EXPIRES_IN,
   });
 };
-const signRefreshToken = (id , deviceId) => {
-  return jwt.sign({ id , deviceId}, process.env.REFRESH_TOKEN_SECRET, {
+const signRefreshToken = (id, deviceId) => {
+  return jwt.sign({ id, deviceId }, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
   });
 };
 
-const createSendToken = catchAsync(async (
-  user,
-  statusCode,
-  res,) => {
+const createSendToken = catchAsync(async (user, statusCode, res) => {
   const deviceId = uuidv4(); // Generate a unique deviceId
+  if (user.deviceSessions.length === 5)    user.deviceSessions.shift(); // 5 : nbre of devices allowed in the same yime
   user.deviceSessions.push({ deviceId });
-  await user.save( { validateBeforeSave: false }); 
+  await user.save({ validateBeforeSave: false });
 
-  const accessToken = signAcessToken(user._id , deviceId);
-  const refreshToken = signRefreshToken(user._id , deviceId);
+  const accessToken = signAcessToken(user._id, deviceId);
+  const refreshToken = signRefreshToken(user._id, deviceId);
   //console.log( " refresh 2", refreshToken);
   //console.log(accessToken);
   // Store the refresh token in Redis with expiration time // for later development
@@ -38,10 +36,9 @@ const createSendToken = catchAsync(async (
   //   refreshToken
   //   );
   const cookieOptions = {
-    expires: 
-     new Date(
-          Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-        ),
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    ),
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
   };
@@ -88,8 +85,6 @@ exports.login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
-
-
 exports.protect = catchAsync(async (req, res, next) => {
   //get token
   let accesstoken;
@@ -104,7 +99,7 @@ exports.protect = catchAsync(async (req, res, next) => {
       new appError('You are not logged in! Please log in to get access.', 401),
     );
   }
-  
+
   //validate token //it throws an error if the token is invalid Such as (TokenExpiredError ....)
   const decoded = await jwt.verify(
     accesstoken,
@@ -126,75 +121,82 @@ exports.protect = catchAsync(async (req, res, next) => {
       new appError('User recently changed password! Please log in again.', 401),
     );
   }
-  
-  if (!currentUser.deviceSessions.find((session) => session.deviceId === decoded.deviceId)) {
+
+  if (
+    !currentUser.deviceSessions.find(
+      (session) => session.deviceId === decoded.deviceId,
+    )
+  ) {
     return next(new appError('Invalid device session', 401));
   }
-  if (currentUser.deviceSessions.find((session) => session.deviceId === decoded.deviceId && session.lastLogoutTime)) {
+  if (
+    currentUser.deviceSessions.find(
+      (session) =>
+        session.deviceId === decoded.deviceId && session.lastLogoutTime,
+    )
+  ) {
     return next(new appError('User logged out', 401));
   }
   req.user = currentUser;
   next();
 });
 
-
 exports.logout = catchAsync(async (req, res, next) => {
   let token;
   let decoded;
   const { refreshToken } = req.cookies;
-    // Check if refreshToken exists in cookies
-    if (refreshToken) {
-      decoded = await jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-      const currentUser = await User.findById(decoded.id);
+  // Check if refreshToken exists in cookies
+  if (refreshToken) {
+    decoded = await jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const currentUser = await User.findById(decoded.id);
 
-      if (!currentUser) {
-        res.clearCookie('refreshToken');
-        return next(new appError('User does not exist, logged out', 200));
-      }
-
-      // Update last logout time for the device session
-      const session = currentUser.deviceSessions.find(
-        (session) => session.deviceId === decoded.deviceId
-      );
-
-      if (session) {
-        session.lastLogoutTime = new Date();
-        await currentUser.save({ validateBeforeSave: false });
-      }
-
+    if (!currentUser) {
       res.clearCookie('refreshToken');
-      return res.status(200).json({ status: 'success' });
+      return next(new appError('User does not exist, logged out', 200));
     }
 
-    // Check if accessToken exists in headers
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-      decoded = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    // Update last logout time for the device session
+    const session = currentUser.deviceSessions.find(
+      (session) => session.deviceId === decoded.deviceId,
+    );
 
-      const currentUser = await User.findById(decoded.id);
-      if (!currentUser) {
-        return next(new appError('User does not exist', 401));
-      }
-
-      const session = currentUser.deviceSessions.find(
-        (session) => session.deviceId === decoded.deviceId
-      );
-
-      if (session) {
-        session.lastLogoutTime = new Date();
-        await currentUser.save({ validateBeforeSave: false });
-      }
-
-      return res.status(200).json({ status: 'success' });
+    if (session) {
+      session.lastLogoutTime = new Date();
+      await currentUser.save({ validateBeforeSave: false });
     }
 
-    // No token provided
-    return next(new appError('No active session found', 200));
-  
+    res.clearCookie('refreshToken');
+    return res.status(200).json({ status: 'success' });
   }
-);
 
+  // Check if accessToken exists in headers
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+    decoded = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next(new appError('User does not exist', 401));
+    }
+
+    const session = currentUser.deviceSessions.find(
+      (session) => session.deviceId === decoded.deviceId,
+    );
+
+    if (session) {
+      session.lastLogoutTime = new Date();
+      await currentUser.save({ validateBeforeSave: false });
+    }
+
+    return res.status(200).json({ status: 'success' });
+  }
+
+  // No token provided
+  return next(new appError('No active session found', 200));
+});
 
 exports.refresh = catchAsync(async (req, res, next) => {
   let refreshToken;
@@ -225,10 +227,8 @@ exports.refresh = catchAsync(async (req, res, next) => {
   createSendToken(currentUser, 200, res);
 });
 
-
-
 exports.forgotPassword = catchAsync(async (req, res, next) => {
-  const user = await User.findOne({ email : req.body.email });
+  const user = await User.findOne({ email: req.body.email });
   if (!user) {
     return next(new appError('There is no user with email address.', 404));
   }
@@ -240,18 +240,16 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   )}/api/v1/user/resetPassword/${resetToken}`;
   const message = `if forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
 
-
-
   try {
     await sendEmail({
       email: user.email,
       subject: 'Your password reset token (valid for 10 min)',
-      message
+      message,
     });
 
     res.status(200).json({
       status: 'success',
-      message: 'Token sent to email!'
+      message: 'Token sent to email!',
     });
   } catch (err) {
     user.passwordResetToken = undefined;
@@ -260,12 +258,10 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
     return next(
       new appError('There was an error sending the email. Try again later!'),
-      500
+      500,
     );
   }
 });
-
-
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on the token
@@ -276,10 +272,10 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({
     passwordResetToken: hashedToken,
-    passwordResetExpires: { $gt: Date.now() }
+    passwordResetExpires: { $gt: Date.now() },
   });
   //console.log(" now date :", new Date(Date.now()).toISOString());
-   // if token has not expired, and we found a user => set the new password
+  // if token has not expired, and we found a user => set the new password
   if (!user) {
     return next(new appError('Token is invalid or has expired', 400));
   }
@@ -292,20 +288,14 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   createSendToken(user, 200, res);
-
-
-
 });
 
-
-
 exports.updatePassword = catchAsync(async (req, res, next) => {
-  if (!req.body.passwordCurrent)  return next(
-    new appError('please provide your current password', 400)
-  );
-  if (!req.body.password || !req.body.passwordConfirm ) {
+  if (!req.body.passwordCurrent)
+    return next(new appError('please provide your current password', 400));
+  if (!req.body.password || !req.body.passwordConfirm) {
     return next(
-      new appError('Please provide password and passwordConfirm', 400)
+      new appError('Please provide password and passwordConfirm', 400),
     );
   }
   // 1) Get user from collection
@@ -313,18 +303,16 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 
   // 2) Check if POSTed current password is correct
   if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
-    return next(new appError('Your current password you submitted is wrong.', 401));
+    return next(
+      new appError('Your current password you submitted is wrong.', 401),
+    );
   }
-  
 
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
   await user.save();
   createSendToken(user, 200, res);
-
 });
-
-
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
@@ -332,7 +320,7 @@ exports.restrictTo = (...roles) => {
     // console.log('req.user.role :', req.user.role);
     if (!roles.includes(req.user.role)) {
       return next(
-        new appError('You do not have permission to perform this action', 403)
+        new appError('You do not have permission to perform this action', 403),
       );
     }
     next();

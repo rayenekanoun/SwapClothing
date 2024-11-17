@@ -15,7 +15,7 @@ router.post('/createItem', itemController.createItem); //done
 router.use(authController.restrictTo('admin'));
 router.route('/')
     .get(itemController.getAllItems)
-    .post(itemController.deleteAllItem);
+    .delete(itemController.deleteAllItem);
 router.route('/:id')
     .get(itemController.getItem)
     .patch(itemController.updateItem)

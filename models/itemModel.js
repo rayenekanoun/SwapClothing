@@ -56,6 +56,10 @@ const itemSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
+      actualPrice: {
+        type: Number,
+        required: [true, 'A clothing item must have an actual price'],
+      },
     // swapRequests: [
     //   {
     //     type: mongoose.Schema.ObjectId,

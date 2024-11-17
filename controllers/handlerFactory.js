@@ -49,7 +49,9 @@ exports.updateOne = Model =>
 
 exports.createOne = Model =>
   catchAsync(async (req, res, next) => {
-    if (Model === Item ) req.body.owner = req.user.id;
+    if (Model === Item ) {req.body.owner = req.user.id;
+    req.body.views = 0;
+    }
     const doc = await Model.create(req.body);
 
     res.status(201).json({
