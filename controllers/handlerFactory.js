@@ -6,7 +6,17 @@ const Item = require('../models/itemModel');
 
 exports.deleteOne = Model =>
   catchAsync(async (req, res, next) => {
-    const doc = await Model.findById(req.params.id);
+    let doc;
+    if (Model.modelName === 'Item' && req.user.role !== 'admin') {
+      doc = await Model.findById(req.params.id);
+      if (!doc) {
+        return next(new AppError('No document found with that ID', 404));
+      }
+      if (doc.owner.toString() !== req.user.id) {
+        return next(new AppError('You do not have permission to update this document', 403));
+      }
+    }
+    doc = await Model.findById(req.params.id);
     if (!doc) {
       return next(new AppError('No document found with that ID', 404));
     }
@@ -30,7 +40,18 @@ exports.updateOne = Model =>
       return next(new AppError('This route is not for password updates. Please use /updateMyPassword.', 400));
     }
 
-    const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
+    let doc;
+    if (Model.modelName === 'Item' && req.user.role !== 'admin') {
+      doc = await Model.findById(req.params.id);
+      if (!doc) {
+        return next(new AppError('No document found with that ID', 404));
+      }
+      if (doc.owner.toString() !== req.user.id) {
+        return next(new AppError('You do not have permission to update this document', 403));
+      }
+    }
+
+    doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
     });
@@ -67,11 +88,11 @@ exports.getOne = (Model, popOptions) =>
     let query = Model.findById(req.params.id);
     if (popOptions) query = query.populate(popOptions);
     const doc = await query;
-
+    console.log("am here")
     if (!doc) {
       return next(new AppError('No document found with that ID', 404));
     }
-    doc.owner.deviceSessions = undefined;
+    if(Model === Item) doc.owner.deviceSessions = undefined;
     res.status(200).json({
       status: 'success',
       data: {

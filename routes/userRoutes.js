@@ -1,5 +1,5 @@
 const express = require('express');
-const authController = require('../controllers/authcontroller');
+const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
 const router = express.Router();
 
@@ -26,6 +26,7 @@ router
 
 router
    .route('/:id')
+   .all(authController.valideId)
    .get(userController.getUser)
    .patch(userController.updateUser)
    .delete(userController.deleteUser);

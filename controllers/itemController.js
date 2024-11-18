@@ -9,4 +9,4 @@ exports.getItem = factory.getOne(Item , {path: 'owner'});
 exports.createItem = factory.createOne(Item);
 exports.updateItem = factory.updateOne(Item);
 exports.deleteItem = factory.deleteOne(Item);
-exports.deleteAllItem = factory.deleteAll(Item);
+exports.deleteAllItems = factory.deleteAll(Item);

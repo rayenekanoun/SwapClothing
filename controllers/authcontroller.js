@@ -6,6 +6,7 @@ const appError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const sendEmail = require('../utils/email');
 const { v4: uuidv4 } = require('uuid');
+const mongoose = require('mongoose');
 //const { compareSync } = require('bcryptjs');
 
 const signAcessToken = (id, deviceId) => {
@@ -185,7 +186,7 @@ exports.logout = catchAsync(async (req, res, next) => {
     const session = currentUser.deviceSessions.find(
       (session) => session.deviceId === decoded.deviceId,
     );
-
+    
     if (session) {
       session.lastLogoutTime = new Date();
       await currentUser.save({ validateBeforeSave: false });
@@ -326,3 +327,9 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+exports.valideId = catchAsync(async (req, res, next) => { // I think thi one should not be async but it doesnt actually matter
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new appError('Invalid ID format', 400));
+  }
+  next();
+});
