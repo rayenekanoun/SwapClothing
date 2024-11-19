@@ -91,7 +91,7 @@ exports.getOne = (Model, popOptions) =>
     if (!doc) {
       return next(new AppError('No document found with that ID', 404));
     }
-    if(Model === Item) doc.owner.deviceSessions = undefined;
+    if(Model === User) doc.owner.deviceSessions = undefined;
     res.status(200).json({
       status: 'success',
       data: {
