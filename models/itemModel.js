@@ -12,13 +12,16 @@ const itemSchema = new mongoose.Schema(
       type: String,
       required: [true, 'A clothing item must have a description'],
       trim: true,
-      maxlength: [500, 'Description must have less than or equal to 500 characters'],
+      maxlength: [
+        500,
+        'Description must have less than or equal to 500 characters',
+      ],
     },
     category: {
       type: String,
       trim: true,
       required: [true, 'A clothing item must have a category'],
-      enum: ['Shirts', 'Pants', 'Jackets', 'Shoes', 'Accessories', 'Other'], 
+      enum: ['Shirts', 'Pants', 'Jackets', 'Shoes', 'Accessories', 'Other'],
     },
     size: {
       type: String,
@@ -28,7 +31,7 @@ const itemSchema = new mongoose.Schema(
     condition: {
       type: String,
       required: [true, 'A clothing item must have a condition'],
-      enum: ['New', 'Like New', 'Good', 'Worn'], 
+      enum: ['New', 'Like New', 'Good', 'Worn'],
     },
     location: {
       type: String,
@@ -50,16 +53,16 @@ const itemSchema = new mongoose.Schema(
     },
     isAvailable: {
       type: Boolean,
-      default: true, 
+      default: true,
     },
     views: {
-        type: Number,
-        default: 0,
-      },
-      actualPrice: {
-        type: Number,
-        required: [true, 'A clothing item must have an actual price'],
-      },
+      type: Number,
+      default: 0,
+    },
+    actualPrice: {
+      type: Number,
+      required: [true, 'A clothing item must have an actual price'],
+    },
     // swapRequests: [
     //   {
     //     type: mongoose.Schema.ObjectId,
@@ -67,11 +70,15 @@ const itemSchema = new mongoose.Schema(
     //   },
     // ],
   },
-  {
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
-);
+ {
+  toJSON: { virtuals: true, transform: (doc, ret) => { delete ret.__v; delete ret.id; return ret; } },
+  toObject: { virtuals: true, transform: (doc, ret) => { delete ret.__v;delete ret.id;  return ret; } }
+});
+
+itemSchema.pre(/^find/, function (next) {
+  this.select('-__v');
+  next();
+});
 
 const item = mongoose.model('Item', itemSchema);
 
