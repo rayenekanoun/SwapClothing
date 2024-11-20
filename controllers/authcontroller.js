@@ -327,9 +327,3 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
-exports.valideId = catchAsync(async (req, res, next) => { // I think thi one should not be async but it doesnt actually matter
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new appError('Invalid ID format', 400));
-  }
-  next();
-});

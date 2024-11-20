@@ -18,7 +18,7 @@ exports.deleteOne = Model =>
     }
     doc = await Model.findById(req.params.id);
     if (!doc) {
-      return next(new AppError('No document found with that ID', 404));
+      return next(new AppError('No document found with that ID ', 404));
     }
     //to restric the deletion of an admin
     if(Model=== User && doc.role==="admin"){ 
@@ -91,7 +91,7 @@ exports.getOne = (Model, popOptions) =>
     if (!doc) {
       return next(new AppError('No document found with that ID', 404));
     }
-    if(Model === User) doc.owner.deviceSessions = undefined;
+    if(Model === Item) doc.owner.deviceSessions = undefined;
     res.status(200).json({
       status: 'success',
       data: {

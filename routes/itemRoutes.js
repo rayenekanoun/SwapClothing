@@ -1,22 +1,24 @@
 const express = require('express');
 const authController = require('../controllers/authcontroller');
 const itemController = require('../controllers/itemController');
+const validateObj = require('../utils/validation');
+const {itemValidationCreate , itemValidationUpdate} = require("../utils/validation")
 
 const router = express.Router();
 
 
 router.get('/', itemController.getAllItems);
-router.get('/:id', authController.valideId, itemController.getItem);
+router.get('/:id', validateObj.valideId, itemController.getItem);
 
 router.use(authController.protect);
 
 router.route('/:id')
-    .all(authController.valideId) 
-    .patch(itemController.updateItem)
+    .all(validateObj.valideId) 
+    .patch(itemValidationUpdate, itemController.updateItem)
     .delete(itemController.deleteItem);
 
 router.route('/')
     .delete(authController.restrictTo('admin'), itemController.deleteAllItems)
-    .post(itemController.createItem);
+    .post(itemValidationCreate, itemController.createItem);
   
 module.exports = router;
