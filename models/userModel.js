@@ -64,7 +64,7 @@ const userSchema = new mongoose.Schema({
   wishList: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'ClothingItem', // Reference to ClothingItem schema
+      ref: 'Item', // Reference to ClothingItem schema
     },
   ],
   active: {
