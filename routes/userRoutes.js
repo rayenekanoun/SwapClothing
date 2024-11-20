@@ -2,8 +2,11 @@ const express = require('express');
 const authController = require('../controllers/authcontroller');
 const userController = require('../controllers/userController');
 const validateObj = require('../utils/validation');
-
+const itemRouter = require('./itemRoutes');
 const router = express.Router();
+
+
+router.use('/:userId/items',validateObj.validateParam(['userId']), itemRouter);
 
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
@@ -28,7 +31,7 @@ router
 
 router
    .route('/:id')
-   .all(validateObj.valideId)
+   .all(validateObj.validateParam(['id']))
    .get(userController.getUser)
    .patch(userController.updateUser)
    .delete(userController.deleteUser);

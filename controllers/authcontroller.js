@@ -6,7 +6,7 @@ const appError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const sendEmail = require('../utils/email');
 const { v4: uuidv4 } = require('uuid');
-const mongoose = require('mongoose');
+//const mongoose = require('mongoose');
 //const { compareSync } = require('bcryptjs');
 
 const signAcessToken = (id, deviceId) => {

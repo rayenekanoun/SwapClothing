@@ -71,9 +71,17 @@ exports.itemValidationCreate  = async function (req, res, next) {
       }
     }
   };
-  exports.valideId = catchAsync(async (req, res, next) => { // I think thi one should not be async but it doesnt actually matter
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return next(new AppError('Invalid ID format', 400));
-    }
-    next();
-  });
+  exports.validateParam = (paramNames) => {
+    return (req, res, next) => {
+      // Loop through each param name and check if it exists
+      for (let paramName of paramNames) {
+        const paramValue = req.params[paramName];
+  
+        if (paramValue && !mongoose.Types.ObjectId.isValid(paramValue)) {
+          return next(new AppError(`Invalid ${paramName} format`, 400));
+        }
+      }
+  
+      next();
+    };
+  };

@@ -4,16 +4,15 @@ const itemController = require('../controllers/itemController');
 const validateObj = require('../utils/validation');
 const {itemValidationCreate , itemValidationUpdate} = require("../utils/validation")
 
-const router = express.Router();
-
+const router = express.Router( { mergeParams: true });
 
 router.get('/', itemController.getAllItems);
-router.get('/:id', validateObj.valideId, itemController.getItem);
+router.get('/:id', validateObj.validateParam(['id']), itemController.getItem);
 
 router.use(authController.protect);
 
 router.route('/:id')
-    .all(validateObj.valideId) 
+    .all(validateObj.validateParam(['id'])) 
     .patch(itemValidationUpdate, itemController.updateItem)
     .delete(itemController.deleteItem);
 
