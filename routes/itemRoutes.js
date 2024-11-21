@@ -7,7 +7,7 @@ const {itemValidationCreate , itemValidationUpdate} = require("../utils/validati
 const router = express.Router( { mergeParams: true });
 
 router.get('/', itemController.getAllItems);
-router.get('/:id', validateObj.validateParam(['id']), itemController.getItem);
+router.get('/:id', validateObj.validateParam(['id']),authController.amIloggedIn, itemController.getItem);
 
 router.use(authController.protect);
 

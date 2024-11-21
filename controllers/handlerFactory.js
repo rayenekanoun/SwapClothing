@@ -4,7 +4,7 @@ const APIFeatures = require('./../utils/apiFeatures');
 const User = require('../models/userModel');
 const Item = require('../models/itemModel');
 
-exports.deleteOne = Model =>
+exports.deleteOne = (Model) =>
   catchAsync(async (req, res, next) => {
     let doc;
     if (Model.modelName === 'Item' && req.user.role !== 'admin') {
@@ -13,7 +13,12 @@ exports.deleteOne = Model =>
         return next(new AppError('No document found with that ID', 404));
       }
       if (doc.owner.toString() !== req.user.id) {
-        return next(new AppError('You do not have permission to update this document', 403));
+        return next(
+          new AppError(
+            'You do not have permission to update this document',
+            403,
+          ),
+        );
       }
     }
     doc = await Model.findById(req.params.id);
@@ -21,7 +26,7 @@ exports.deleteOne = Model =>
       return next(new AppError('No document found with that ID ', 404));
     }
     //to restric the deletion of an admin
-    if(Model=== User && doc.role==="admin"){ 
+    if (Model === User && doc.role === 'admin') {
       return next(new AppError('You cannot delete an admin', 401));
     }
 
@@ -29,15 +34,19 @@ exports.deleteOne = Model =>
 
     res.status(204).json({
       status: 'success',
-      data: null
+      data: null,
     });
   });
 
-exports.updateOne = Model =>
+exports.updateOne = (Model) =>
   catchAsync(async (req, res, next) => {
-
     if (req.body.password || req.body.passwordConfirm) {
-      return next(new AppError('This route is not for password updates. Please use /updateMyPassword.', 400));
+      return next(
+        new AppError(
+          'This route is not for password updates. Please use /updateMyPassword.',
+          400,
+        ),
+      );
     }
 
     let doc;
@@ -47,13 +56,18 @@ exports.updateOne = Model =>
         return next(new AppError('No document found with that ID', 404));
       }
       if (doc.owner.toString() !== req.user.id) {
-        return next(new AppError('You do not have permission to update this document', 403));
+        return next(
+          new AppError(
+            'You do not have permission to update this document',
+            403,
+          ),
+        );
       }
     }
 
     doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true
+      runValidators: true,
     });
 
     if (!doc) {
@@ -63,49 +77,69 @@ exports.updateOne = Model =>
     res.status(200).json({
       status: 'success',
       data: {
-        data: doc
-      }
+        data: doc,
+      },
     });
   });
 
-exports.createOne = Model =>
+exports.createOne = (Model) =>
   catchAsync(async (req, res, next) => {
-    if (Model === Item ) {req.body.owner = req.user.id;
-    req.body.views = 0;
+    if (Model === Item) {
+      req.body.owner = req.user.id;
+      req.body.views = 0;
     }
     const doc = await Model.create(req.body);
 
     res.status(201).json({
       status: 'success',
       data: {
-        data: doc
-      }
+        data: doc,
+      },
     });
   });
 
-exports.getOne = (Model, popOptions) =>
-  catchAsync(async (req, res, next) => {
-    let query = Model.findById(req.params.id);
-    if (popOptions) query = query.populate(popOptions);
-    const doc = await query;
-    if (!doc) {
-      return next(new AppError('No document found with that ID', 404));
+  const incrementViews = async (doc, user) => {
+    if (user) {
+      if (
+        // Only increment views if the user is not the owner and is not an admin
+        doc.owner._id.toString() !== user.id &&
+        user.role !== 'admin'
+      ) {
+        doc.views += 1; // Increment views
+        await doc.save(); // Wait for save to complete before continuing
+      }
     }
-    if(Model === Item) doc.owner.deviceSessions = undefined;
-    res.status(200).json({
-      status: 'success',
-      data: {
-        data: doc
+  };
+  
+  exports.getOne = (Model, popOptions) =>
+    catchAsync(async (req, res, next) => {
+      let query = Model.findById(req.params.id);
+      if (popOptions) query = query.populate(popOptions);
+      
+      const doc = await query;
+      
+      if (!doc) {
+        return next(new AppError('No document found with that ID', 404));
       }
+      
+      if (Model === Item) {
+        doc.owner.deviceSessions = undefined; // Assuming you want to omit the deviceSessions field
+        await incrementViews(doc, req.user); // Ensure views are incremented before sending the response
+      }
+      
+      res.status(200).json({
+        status: 'success',
+        data: {
+          data: doc,
+        },
+      });
     });
-  });
-
-exports.getAll = Model =>
+  
+exports.getAll = (Model) =>
   catchAsync(async (req, res, next) => {
     // To allow for nested GET reviews on tour (hack)
     let filter = {};
-    if (req.params.userId)
-      filter = { owner: req.params.userId };
+    if (req.params.userId) filter = { owner: req.params.userId };
 
     const features = new APIFeatures(Model.find(filter), req.query)
       .filter()
@@ -119,17 +153,16 @@ exports.getAll = Model =>
     res.status(200).json({
       status: 'success',
       results: doc.length,
-      data:  doc
-      
+      data: doc,
     });
   });
 
-
-  exports.deleteAll = Model => catchAsync(async (req, res, next) => {
+exports.deleteAll = (Model) =>
+  catchAsync(async (req, res, next) => {
     await Model.deleteMany();
-  
+
     res.status(204).json({
       status: 'success',
-      data: null
+      data: null,
     });
   });

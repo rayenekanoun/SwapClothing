@@ -327,3 +327,49 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+exports.amIloggedIn = catchAsync (async (req, res, next) => {
+    let accesstoken;
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      accesstoken = req.headers.authorization.split(' ')[1];
+    }
+    if (!accesstoken) {
+       return next();
+    }
+  
+    //validate token //it throws an error if the token is invalid Such as (TokenExpiredError ....)
+    const decoded = await jwt.verify(
+      accesstoken,
+      process.env.ACCESS_TOKEN_SECRET,
+    );
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next();
+    }
+    //check if user changed password after the token was issued
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      return next(
+        new appError('User recently changed password! Please log in again.', 401),
+      );
+    }
+  
+    if (
+      !currentUser.deviceSessions.find(
+        (session) => session.deviceId === decoded.deviceId,
+      )
+    ) {
+      return next(new appError('Invalid device session', 401));
+    }
+    if (
+      currentUser.deviceSessions.find(
+        (session) =>
+          session.deviceId === decoded.deviceId && session.lastLogoutTime,
+      )
+    ) {
+      return next(new appError('User logged out', 401));
+    }
+    req.user = currentUser;
+    next();
+});
