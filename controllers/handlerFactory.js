@@ -15,7 +15,7 @@ exports.deleteOne = (Model) =>
       if (doc.owner.toString() !== req.user.id) {
         return next(
           new AppError(
-            'You do not have permission to update this document',
+            'You do not have permission to delete this document',
             403,
           ),
         );
