@@ -44,6 +44,7 @@ app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
 });
+//app.set('trust proxy', true)
 
 // Simple route handler
 app.use('/api/v1/user', userRouter);

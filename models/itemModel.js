@@ -3,8 +3,6 @@ const { z } = require('zod');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
-
-
 const itemSchema = new mongoose.Schema(
   {
     name: String,
@@ -12,8 +10,11 @@ const itemSchema = new mongoose.Schema(
     category: String,
     size: String,
     condition: String,
-     location: String,
-   images: [String],
+    location: {
+      type: { type: String, default: 'Point' },
+      coordinates: { type: [Number], default: [0, 0] },
+    },
+    images: [String],
     owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now },
     isAvailable: { type: Boolean, default: true },
@@ -37,14 +38,14 @@ const itemSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // itemSchema.pre('save',(next)=>{
 //   console.log(typeof this);
 //   next();
 // });
-
+itemSchema.index({ startLocation: '2dsphere' });
 
 const Item = mongoose.model('Item', itemSchema);
 

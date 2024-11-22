@@ -13,7 +13,12 @@ exports.itemValidationCreate  = async function (req, res, next) {
         category: z.enum(['Shirts', 'Pants', 'Jackets', 'Shoes', 'Accessories', 'Other'], 'Invalid category'),
         size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Custom'], 'Invalid size'),
         condition: z.enum(['New', 'Like New', 'Good', 'Worn'], 'Invalid condition'),
-        location: z.string().trim().min(1, 'Location is required'),
+        location: z.object({
+          type: z.literal('Point'),
+          coordinates: z
+            .array(z.number().min(-180).max(180)) // Validate longitude and latitude range
+            .length(2, 'Coordinates must be [longitude, latitude]'),
+        }).optional(),
         images: z.array(z.string().url('Invalid image URL')).min(1, 'At least one image is required'),
         actualPrice: z.number().positive('Actual price must be a positive number'),
         isAvailable: z.boolean().optional().default(true),
@@ -46,7 +51,12 @@ exports.itemValidationCreate  = async function (req, res, next) {
       category: z.enum(['Shirts', 'Pants', 'Jackets', 'Shoes', 'Accessories', 'Other'], 'Invalid category'),
       size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Custom'], 'Invalid size'),
       condition: z.enum(['New', 'Like New', 'Good', 'Worn'], 'Invalid condition'),
-      location: z.string().trim().min(1, 'Location is required'),
+      location: z.object({
+        type: z.literal('Point'),
+        coordinates: z
+          .array(z.number().min(-180).max(180)) // Validate longitude and latitude range
+          .length(2, 'Coordinates must be [longitude, latitude]'),
+      }).optional(),
       images: z.array(z.string().url('Invalid image URL')).min(1, 'At least one image is required'),
       actualPrice: z.number().positive('Actual price must be a positive number'),
       isAvailable: z.boolean().optional().default(true),

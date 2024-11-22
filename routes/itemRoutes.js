@@ -2,10 +2,10 @@ const express = require('express');
 const authController = require('../controllers/authcontroller');
 const itemController = require('../controllers/itemController');
 const validateObj = require('../utils/validation');
+const {getLocation} = require('../utils/getLocation');
 const {itemValidationCreate , itemValidationUpdate} = require("../utils/validation")
 
 const router = express.Router( { mergeParams: true });
-
 router.get('/', itemController.getAllItems);
 router.get('/:id', validateObj.validateParam(['id']),authController.amIloggedIn, itemController.getItem);
 
@@ -18,6 +18,6 @@ router.route('/:id')
 
 router.route('/')
     .delete(authController.restrictTo('admin'), itemController.deleteAllItems)
-    .post(itemValidationCreate, itemController.createItem);
+    .post(itemValidationCreate, getLocation, itemController.createItem);
   
 module.exports = router;
