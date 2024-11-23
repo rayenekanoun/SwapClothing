@@ -11,7 +11,7 @@ exports.getLocation = catchAsync(async (req, res, next) => {
     );
     req.body.location = {
       type: 'Point',
-      coordinates: [response.data[0].lat, response.data[0].lon],
+      coordinates: [response.data[0].lon, response.data[0].lat],
     };
   } catch (err) {
     return next(new AppError('Location not found', 404));

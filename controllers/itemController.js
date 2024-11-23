@@ -15,7 +15,6 @@ exports.getItemsWithin = catchAsync(async (req, res, next) => {
     console.log(distance, latlng, unit);
     
     const [lat, lng] = latlng.split(',');
-    console.log(lat, lng);
     if (!lat || !lng) {
         return next(new AppError('Please provide latitude and longitude in the format lat,lng.', 400));
     }
