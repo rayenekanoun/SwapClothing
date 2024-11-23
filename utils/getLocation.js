@@ -2,25 +2,19 @@ const catchAsync = require('../utils/catchAsync');
 const Item = require('../models/itemModel');
 const axios = require('axios');
 const fetch = require('node-fetch');
+const AppError = require('../utils/appError');
 
 exports.getLocation = catchAsync(async (req, res, next) => {
   try {
-    req.publicIp = req.headers['x-forwarded-for'] ; 
     const response = await axios.get(
-      `https://get.geojs.io/v1/ip/geo/${req.publicIp}.json`,
+      `https://nominatim.openstreetmap.org/search?q=${req.body.location}&format=json`
     );
-    let { latitude, longitude } = response.data;
-    // loc = loc.split(',');
     req.body.location = {
       type: 'Point',
-      coordinates: [longitude,latitude],
+      coordinates: [response.data[0].lat, response.data[0].lon],
     };
   } catch (err) {
-    req.body.location = {
-      type: 'Point',
-      coordinates: [0, 0],
-    };
+    return next(new AppError('Location not found', 404));
   }
-
   next();
 });
