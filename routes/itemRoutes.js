@@ -10,7 +10,7 @@ router.get('/', itemController.getAllItems);
 router.get('/:id', validateObj.validateParam(['id']),authController.amIloggedIn, itemController.getItem);
 
 router.use(authController.protect);
-
+router.use("/items-within/:distance/center/:latlng/unit/:unit", itemController.getItemsWithin);
 router.route('/:id')
     .all(validateObj.validateParam(['id'])) 
     .patch(itemValidationUpdate, itemController.updateItem)
