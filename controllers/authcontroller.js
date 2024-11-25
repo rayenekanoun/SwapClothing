@@ -22,20 +22,13 @@ const signRefreshToken = (id, deviceId) => {
 
 const createSendToken = catchAsync(async (user, statusCode, res) => {
   const deviceId = uuidv4(); // Generate a unique deviceId
-  if (user.deviceSessions.length === 5)    user.deviceSessions.shift(); // 5 : nbre of devices allowed in the same yime
+  if (user.deviceSessions.length === 5) user.deviceSessions.shift(); // 5 : nbre of devices allowed in the same yime
   user.deviceSessions.push({ deviceId });
   await user.save({ validateBeforeSave: false });
 
   const accessToken = signAcessToken(user._id, deviceId);
   const refreshToken = signRefreshToken(user._id, deviceId);
-  //console.log( " refresh 2", refreshToken);
-  //console.log(accessToken);
-  // Store the refresh token in Redis with expiration time // for later development
-  // await redisClient.setex(
-  //   user._id.toString(),
-  //   parseInt(process.env.JWT_REFRESH_EXPIRES_IN *24 * 60 * 60 * 1000, 10), // Expiration time in seconds
-  //   refreshToken
-  //   );
+
   const cookieOptions = {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
@@ -44,9 +37,7 @@ const createSendToken = catchAsync(async (user, statusCode, res) => {
     secure: process.env.NODE_ENV === 'production',
   };
   res.cookie('refreshToken', refreshToken, cookieOptions);
-  //res.cookie('deviceId', deviceId, { httpOnly: true }); // instead of putting it in the jwt token we put it in the cookie
 
-  // Remove password from output
   user.password = undefined;
 
   res.status(statusCode).json({
@@ -71,11 +62,10 @@ exports.signup = catchAsync(async (req, res, next) => {
 
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
-  // check if email and password E
+
   if (!email || !password) {
     return next(new appError('Please provide email and password!', 400));
   }
-  // check if user exists && password is correct
   const user = await User.findOne({ email }).select('+password');
   if (!user) {
     return next(new appError('there is no user with this email', 401));
@@ -87,7 +77,6 @@ exports.login = catchAsync(async (req, res, next) => {
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
-  //get token
   let accesstoken;
   if (
     req.headers.authorization &&
@@ -146,7 +135,6 @@ exports.logout = catchAsync(async (req, res, next) => {
   let token;
   let decoded;
   const { refreshToken } = req.cookies;
-  // Check if refreshToken exists in cookies
   if (refreshToken) {
     decoded = await jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     const currentUser = await User.findById(decoded.id);
@@ -156,7 +144,6 @@ exports.logout = catchAsync(async (req, res, next) => {
       return next(new appError('User does not exist, logged out', 200));
     }
 
-    // Update last logout time for the device session
     const session = currentUser.deviceSessions.find(
       (session) => session.deviceId === decoded.deviceId,
     );
@@ -170,7 +157,6 @@ exports.logout = catchAsync(async (req, res, next) => {
     return res.status(200).json({ status: 'success' });
   }
 
-  // Check if accessToken exists in headers
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
@@ -186,7 +172,7 @@ exports.logout = catchAsync(async (req, res, next) => {
     const session = currentUser.deviceSessions.find(
       (session) => session.deviceId === decoded.deviceId,
     );
-    
+
     if (session) {
       session.lastLogoutTime = new Date();
       await currentUser.save({ validateBeforeSave: false });
@@ -195,7 +181,6 @@ exports.logout = catchAsync(async (req, res, next) => {
     return res.status(200).json({ status: 'success' });
   }
 
-  // No token provided
   return next(new appError('No active session found', 200));
 });
 
@@ -208,14 +193,6 @@ exports.refresh = catchAsync(async (req, res, next) => {
     refreshToken,
     process.env.REFRESH_TOKEN_SECRET,
   );
-
-  // // Get stored token from Redis // for later development
-  // const storedRefreshToken = await redisClient.get(decoded.id);
-  // if (storedRefreshToken !== refreshToken) {
-  //   return next(new appError('Invalid refresh token', 403));
-  // }
-
-  // console.log( " refresh 1", refreshToken);
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) {
     return next(
@@ -265,7 +242,6 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
-  // 1) Get user based on the token
   const hashedToken = crypto
     .createHash('sha256')
     .update(req.params.token)
@@ -275,8 +251,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
   });
-  //console.log(" now date :", new Date(Date.now()).toISOString());
-  // if token has not expired, and we found a user => set the new password
+
   if (!user) {
     return next(new appError('Token is invalid or has expired', 400));
   }
@@ -299,10 +274,8 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
       new appError('Please provide password and passwordConfirm', 400),
     );
   }
-  // 1) Get user from collection
   const user = await User.findById(req.user.id).select('+password');
 
-  // 2) Check if POSTed current password is correct
   if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
     return next(
       new appError('Your current password you submitted is wrong.', 401),
@@ -317,8 +290,6 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    // console.log('roles :', roles);
-    // console.log('req.user.role :', req.user.role);
     if (!roles.includes(req.user.role)) {
       return next(
         new appError('You do not have permission to perform this action', 403),
@@ -327,49 +298,47 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
-exports.amIloggedIn = catchAsync (async (req, res, next) => {
-    let accesstoken;
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-    ) {
-      accesstoken = req.headers.authorization.split(' ')[1];
-    }
-    if (!accesstoken) {
-       return next();
-    }
-  
-    //validate token //it throws an error if the token is invalid Such as (TokenExpiredError ....)
-    const decoded = await jwt.verify(
-      accesstoken,
-      process.env.ACCESS_TOKEN_SECRET,
+exports.amIloggedIn = catchAsync(async (req, res, next) => {
+  let accesstoken;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    accesstoken = req.headers.authorization.split(' ')[1];
+  }
+  if (!accesstoken) {
+    return next();
+  }
+
+  const decoded = await jwt.verify(
+    accesstoken,
+    process.env.ACCESS_TOKEN_SECRET,
+  );
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    return next();
+  }
+  if (currentUser.changedPasswordAfter(decoded.iat)) {
+    return next(
+      new appError('User recently changed password! Please log in again.', 401),
     );
-    const currentUser = await User.findById(decoded.id);
-    if (!currentUser) {
-      return next();
-    }
-    //check if user changed password after the token was issued
-    if (currentUser.changedPasswordAfter(decoded.iat)) {
-      return next(
-        new appError('User recently changed password! Please log in again.', 401),
-      );
-    }
-  
-    if (
-      !currentUser.deviceSessions.find(
-        (session) => session.deviceId === decoded.deviceId,
-      )
-    ) {
-      return next(new appError('Invalid device session', 401));
-    }
-    if (
-      currentUser.deviceSessions.find(
-        (session) =>
-          session.deviceId === decoded.deviceId && session.lastLogoutTime,
-      )
-    ) {
-      return next(new appError('User logged out', 401));
-    }
-    req.user = currentUser;
-    next();
+  }
+
+  if (
+    !currentUser.deviceSessions.find(
+      (session) => session.deviceId === decoded.deviceId,
+    )
+  ) {
+    return next(new appError('Invalid device session', 401));
+  }
+  if (
+    currentUser.deviceSessions.find(
+      (session) =>
+        session.deviceId === decoded.deviceId && session.lastLogoutTime,
+    )
+  ) {
+    return next(new appError('User logged out', 401));
+  }
+  req.user = currentUser;
+  next();
 });
