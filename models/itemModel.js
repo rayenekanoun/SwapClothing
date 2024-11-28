@@ -45,7 +45,7 @@ const itemSchema = new mongoose.Schema(
 //   console.log(typeof this);
 //   next();
 // });
-itemSchema.index({ startLocation: '2dsphere' });
+itemSchema.index({ location: '2dsphere' });
 
 const Item = mongoose.model('Item', itemSchema);
 
