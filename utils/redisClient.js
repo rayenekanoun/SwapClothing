@@ -2,7 +2,7 @@
 
 // const redisClient = redis.createClient({
 //   url: 'redis://localhost:6380',
-//   legacyMode: true,  // Legacy mode is required if using callback-based methods
+//   legacyMode: true,  
 // });
 
 // redisClient.on('error', (err) => {
@@ -13,7 +13,7 @@
 //   console.log('Connected to Redis');
 // });
 
-// // Connect the client
+
 // redisClient.connect();
 
 // module.exports = redisClient;
