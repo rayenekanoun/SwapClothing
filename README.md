@@ -1,26 +1,134 @@
 # Clothing Swap - A Peer-to-Peer Clothing Exchange Platform
 
-Clothing Swap is a web platform that enables users to exchange or donate clothes they no longer need in a sustainable way. Users can list items, browse others’ items, initiate swaps, and even negotiate with a small financial supplement if needed. This platform aims to encourage sustainable fashion, build community connections, and reduce waste through peer-to-peer swapping.
 
-Features:
 
-User Registration & Authentication: Secure account setup using JWT, including login, signup, and profile management.
-Item Listings: Users can list clothing items with descriptions, photos, categories, sizes, and conditions.
-Search and Browse: Explore a range of items using filters for categories, sizes, and conditions.
-Swap Requests & Negotiations: Initiate swap requests with other users, including the option to add a financial supplement.
-User Notifications: Receive alerts on swap requests, status updates, and messages.
-Reviews and Ratings: Build trust by leaving reviews and ratings after each swap.
-Admin Controls: Basic admin functionalities for managing user accounts and content.
-Tech Stack:
 
-Backend: Node.js, Express.js, MongoDB for data storage.
-Frontend: React, Tailwind CSS for a responsive and engaging UI.
-Authentication: JWT-based authentication.
-Image Hosting: Integration with a third-party image hosting service.
-Setup Instructions:
+# Clothing Swap App
 
-Clone this repository.
-Install dependencies (npm install).
-Set up environment variables for MongoDB, JWT secret, and image hosting.
-Run the development server (npm start for frontend, npm run server for backend).
-Goals: To provide a user-friendly, environmentally conscious platform that supports circular fashion and fosters community engagement.
+The Clothing Swap App is a platform for users to trade, sell, or donate clothing items. It allows users to create accounts, upload items they wish to trade, and interact with other users to facilitate clothing swaps. The application includes features for geolocation-based item searches, secure authentication, and user management.
+
+---
+
+## Features
+
+- **User Authentication**: 
+  - Sign up, log in, refresh tokens, password reset, and secure authentication.
+  - Role-based access control (e.g., admin privileges).
+
+- **Item Management**:
+  - Create, update, and delete clothing items.
+  - View all items or specific items based on unique IDs.
+  - Search for items within a specified distance using geolocation.
+
+- **User Management**:
+  - Update user profiles, passwords, and account settings.
+  - Admins can manage all user accounts.
+
+- **Geolocation Search**:
+  - Search for items based on proximity to a specified location.
+
+---
+
+## Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd clothing-swap-app
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables:**
+   Create a `.env` file in the root directory with the following variables:
+   ```env
+   PORT=3000
+   DATABASE_URL=<your-database-url>
+   JWT_SECRET=<your-jwt-secret>
+   JWT_EXPIRES_IN=<token-expiry-time>
+   JWT_COOKIE_EXPIRES_IN=<cookie-expiry-time>
+   EMAIL_HOST=<email-host>
+   EMAIL_PORT=<email-port>
+   EMAIL_USER=<email-username>
+   EMAIL_PASS=<email-password>
+   ```
+
+4. **Run the application:**
+   ```bash
+   npm start
+   ```
+
+---
+
+## Launching the Server
+
+The server can be started using:
+```bash
+npm start
+```
+This will run the application on the port specified in the `.env` file (default is `3000`).
+
+For development, use:
+```bash
+npm run dev
+```
+This enables hot-reloading.
+
+---
+
+## API Routes
+
+### Item Routes
+Base URL: `/api/v1/items`
+
+| Method | Endpoint                                      | Description                                    |
+|--------|-----------------------------------------------|-----------------------------------------------|
+| GET    | `/`                                           | Fetch all items.                              |
+| GET    | `/:id`                                        | Fetch a specific item by ID.                  |
+| POST   | `/`                                           | Create a new item (authenticated users only). |
+| PATCH  | `/:id`                                        | Update an item by ID (authenticated users).   |
+| DELETE | `/:id`                                        | Delete an item by ID (authenticated users).   |
+| DELETE | `/`                                           | Delete all items (admin only).                |
+| GET    | `/items-within/:distance/center/:latlng/unit/:unit` | Fetch items within a specified distance of a location. |
+
+### User Routes
+Base URL: `/api/v1/users`
+
+| Method | Endpoint                 | Description                                    |
+|--------|--------------------------|-----------------------------------------------|
+| POST   | `/signup`                | Register a new user.                          |
+| POST   | `/login`                 | Log in a user.                                |
+| POST   | `/refresh`               | Refresh JWT tokens.                           |
+| POST   | `/forgotPassword`        | Send a password reset email.                  |
+| PATCH  | `/resetPassword/:token`  | Reset user password.                          |
+| POST   | `/logout`                | Log out a user.                               |
+| PATCH  | `/updateMyPassword`      | Update the current user's password.           |
+| GET    | `/me`                    | Fetch the current user's profile.             |
+| PATCH  | `/updateMe`              | Update the current user's profile.            |
+| DELETE | `/deleteMe`              | Delete the current user's account.            |
+| GET    | `/`                      | Fetch all users (admin only).                 |
+| GET    | `/:id`                   | Fetch a specific user by ID (admin only).     |
+| PATCH  | `/:id`                   | Update a user by ID (admin only).             |
+| DELETE | `/:id`                   | Delete a user by ID (admin only).             |
+
+---
+
+## Notes
+
+1. **Authentication Middleware:**
+   - `authController.protect`: Ensures the user is logged in before accessing certain routes.
+   - `authController.restrictTo`: Restricts access based on user roles.
+
+2. **Validation Middleware:**
+   - `validateObj.validateParam`: Ensures required parameters are present in requests.
+   - `itemValidationCreate` and `itemValidationUpdate`: Validate item creation and update data.
+
+3. **Geolocation:**
+   - The route `/items-within/:distance/center/:latlng/unit/:unit` requires `latlng` in the format `latitude,longitude`.
+
+---
+
+Feel free to reach out for further details or enhancements!
