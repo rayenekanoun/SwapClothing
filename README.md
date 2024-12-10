@@ -123,4 +123,3 @@ Base URL: `/api/v1/users`
 
 ---
 
-Feel free to reach out for further details or enhancements!
