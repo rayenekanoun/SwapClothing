@@ -1,7 +1,3 @@
-# Clothing Swap - A Peer-to-Peer Clothing Exchange Platform
-
-
-
 
 # Clothing Swap App
 
@@ -31,18 +27,14 @@ The Clothing Swap App is a platform for users to trade, sell, or donate clothing
 
 ## Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd clothing-swap-app
-   ```
 
-2. **Install dependencies:**
+
+1. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. **Set up environment variables:**
+2. **Set up environment variables:**
    Create a `.env` file in the root directory with the following variables:
    ```env
    PORT=3000
@@ -56,7 +48,7 @@ The Clothing Swap App is a platform for users to trade, sell, or donate clothing
    EMAIL_PASS=<email-password>
    ```
 
-4. **Run the application:**
+3. **Run the application:**
    ```bash
    npm start
    ```
